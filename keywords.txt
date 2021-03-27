@@ -1,0 +1,35 @@
+#######################################
+# Syntax Coloring Map For LED_Matrix
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+LED_Matrix				KEYWORD1
+scrollDir				KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setPixel				KEYWORD2
+getPixel				KEYWORD2
+display					KEYWORD2
+getNumDevices			KEYWORD2
+setIntensity			KEYWORD2
+clear 					KEYWORD2
+printChar				KEYWORD2
+swapChar				KEYWORD2
+scrollDisplay			KEYWORD2
+scrollDisplayPart		KEYWORD2
+displayTest				KEYWORD2
+begin					KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+scrollUp				LITERAL1
+scrollDown				LITERAL1
+scrollLeft				LITERAL1
+scrollRight				LITERAL1
