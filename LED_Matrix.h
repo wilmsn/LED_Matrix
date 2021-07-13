@@ -5,17 +5,29 @@ This library is licensed under the GNU GPLv3 (https://www.gnu.org/licenses/gpl.h
 
 frameBuffer organisation:
                       DISPLAY (X devices)
-------------------------------------------------------------------
-| MSB frameBuffer[0] LSB|               | frameBuffer[8*(X-1)+0] |   
-|     frameBuffer[1]    |               | frameBuffer[8*(X-1)+1] |   
-|     frameBuffer[2]    |               | frameBuffer[8*(X-1)+2] |   
-|     frameBuffer[3]    |     ...       | frameBuffer[8*(X-1)+3] |   
-|     frameBuffer[4]    |               | frameBuffer[8*(X-1)+4] |   
-|     frameBuffer[5]    |               | frameBuffer[8*(X-1)+5] |   
-|     frameBuffer[6]    |               | frameBuffer[8*(X-1)+6] |   
-|     frameBuffer[7]    |               | frameBuffer[8*(X-1)+7] |   
-------------------------------------------------------------------
-
+       -----------------------------------------
+       | MSB frameBuffer[0] LSB|               |   
+D      |     frameBuffer[1]    |               |
+I      |     frameBuffer[2]    |               |
+S      |     frameBuffer[3]    |     ...       |
+P      |     frameBuffer[4]    |               |==   
+L      |     frameBuffer[5]    |               |  | 
+A      |     frameBuffer[6]    |               |  | 
+Y      |     frameBuffer[7]    |               |  | 
+       -----------------------------------------  |
+(                                                 |
+Y   ================== ... =======================                                                                 
+   |                       
+d  |  --------------------------------------------
+e  |  |                | frameBuffer[8*(X*Y-1)+0] |   
+v  |  |                | frameBuffer[8*(X*Y-1)+1] |   
+i  |  |                | frameBuffer[8*(X*Y-1)+2] |   
+c  ===|      ...       | frameBuffer[8*(X*Y-1)+3] | =====> Arduino/ESP8266/ESP32  
+e     |                | frameBuffer[8*(X*Y-1)+4] |   
+s     |                | frameBuffer[8*(X*Y-1)+5] |   
+)     |                | frameBuffer[8*(X*Y-1)+6] |   
+      |                | frameBuffer[8*(X*Y-1)+7] |   
+      --------------------------------------------
 
 **********************************************************************/
 
@@ -48,7 +60,8 @@ frameBuffer organisation:
 
 #define FONT_SIZE 6
 
-class LED_Matrix {
+
+class LED_Matrix : public Print {
 	
 	public:
     // public variables and typedefinitions
@@ -62,16 +75,24 @@ class LED_Matrix {
 	
     /*
     The constructor, call:
-    LED_MATRIX <Name of object>(<DIN Pin on Arduino>, <CLK Pin on Arduino>, <CS Pin on Arduino>, <Number of Devices>);
+    LED_MATRIX <Name of object>(<DIN Pin on Arduino>, <CLK Pin on Arduino>, <CS Pin on Arduino>, <Number of Devices in X Dir.>, <Number of Devices in Y Dir.>);
     LED_MATRIX matrix(4, 5, 6, 4); // 4 devices daisy chained on port 4...6	
     */  	
-    LED_Matrix(int dinPin, int clkPin, int csPin, int numDevices);
+    LED_Matrix(unsigned int dinPin, unsigned int clkPin, unsigned int csPin, unsigned int devicesX, unsigned int devicesY);
 
     /*
     begin: call it during setup to get all the initialisation stuff done
     */	
 	void begin(void);
 
+    /*
+     * setFont: Selects between available fonts.
+     * Build in fonts are:
+     * 1) 6*7 fonts variable x-size
+     * 2) 6*7 fonts fixed x-size
+     */
+    void setFont(byte font);
+    
     /*
 	display: displays the content of the framebuffer
 	*/
@@ -80,8 +101,12 @@ class LED_Matrix {
 	/*
 	getNumDevices: get the configured number of devices call in constructor
 	*/
-    int getNumDevices(void);
+    unsigned int getNumDevicesX(void);
 	
+	/*
+	getNumDevices: get the configured number of devices call in constructor
+	*/
+    unsigned int getNumDevicesY(void);
 	/*
 	setIntensity: sets the intensity of all segments
 	intensity can be 0 = minimal to 15 = maximum
@@ -89,10 +114,12 @@ class LED_Matrix {
 	void setIntensity(byte intensity);
 
     /*
-	clear: Clear the framebuffer
+	clear: Clear the framebuffer 
 	Dont forget to call display() to see the result!
 	*/
 	void clear(void);
+    // clear just the rectangle between (x0,y0) and (x1,y1)
+	void clear(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
 
 	/*
 	setPixel: set or delete a single pixel.
@@ -106,55 +133,49 @@ class LED_Matrix {
 	 w |                      |
 	 | |                      |
 	 V ------------------------
-                  (8*#Devices-1,7)  
+                  (8*#DevicesX-1,8*#DevicesY-1)  
 	*/			  
-    void setPixel(int col, int row, bool val);
+    void setPixel(unsigned int col, unsigned int row, bool val=true);
 	
 	/*
 	getPixel: get a pixel from a position
 	Result: true if pixel is set, false if not set
 	*/
-	bool getPixel(int col, int row);
-	
-    /*
-	printChar: prints a single char at position <col>
-	*/
-	void printChar(int col, char c);
-
-    /*
-	swapChar: swaps a single char at position <col> against the new char <c>
-	          <delayTime> is the time to wait in ms between the single steps
-			  <dir> the direction is one of: scrollUp, scrollDown, scrollLeft, scrollRight
-			  call like this in your program:
-			  matrix.swapChar(25,'9',matrix.scrollDir::scrollRight, 100);
-	*/
-	void swapChar(int col, char c, scrollDir dir, int delayTime);
+	bool getPixel(unsigned int col, unsigned int row);
 	
 	/*
 	scrollDisplay: scrolls the display for 1 pixel in the given direction
 	Direction is one of: scrollUp, scrollDown, scrollLeft, scrollRight	
 	*/
 	void scrollDisplay(scrollDir dir);
+	void scrollDisplay(scrollDir dir, unsigned int first, unsigned int last);
+	void scrollDisplay(scrollDir dir, unsigned int firstX, unsigned int lastX, unsigned int firstY, unsigned int lastY);
 	
-	/*
-	scrollDisplayPart: scrolls a part of the display for 1 pixel in the given direction
-	Scrollarea starts on column <col> and is <width> pixel width.
-	direction is one of: scrollUp, scrollDown, scrollLeft, scrollRight
-	*/
-	void scrollDisplayPart(int col, int width, scrollDir dir);
-
     /*
     displayTest: state = true turns on all LED of <deviceNumber>
                  state = false turns it off.
     */				 
-	void displayTest(int deviceNumber, bool state);
+	void displayTest(unsigned int deviceNumber, bool state);
+    
+	void setCursor(unsigned int col, unsigned int row);
+    
+
 
 	//private stuff
 	private:
     int _dinPin;
 	int _clkPin;
 	int _csPin; 
-	int _numDevices;
+	unsigned int _numDevices;
+    unsigned int _devicesX;
+    unsigned int _devicesY;
+    byte _intensity;
+    byte _font;
+    unsigned int  maxCol;
+    unsigned int  maxRow;
+    unsigned int  aktCol;
+    unsigned int  aktRow;
+    
 	byte* frameBuffer;
 	/*
 	write2device: writes a combination of <register><data> to a specific device.
@@ -164,8 +185,13 @@ class LED_Matrix {
 	------------    ------------     ------------     -----------
     Only the selected device gets the data all other devices get NOP (no operation)
     */	
-    void write2device(int deviceNumber, byte max_reg, byte max_data);
-	
+    void write2device(unsigned int deviceNumber, byte max_reg, byte max_data);
+
+    unsigned long getFBaddr(unsigned int col, unsigned int row);
+    
+    virtual size_t write(uint8_t c);
+    
+    virtual size_t write(const uint8_t *buffer, size_t size);
 };
 
 #endif /* _LED_MATRIX_H_ */
