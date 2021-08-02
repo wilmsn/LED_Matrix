@@ -21,7 +21,7 @@ LED_Matrix::LED_Matrix(unsigned int dinPin, unsigned int clkPin, unsigned int cs
     _font = 1;
     maxRow = devicesY * 8 - 1;
     maxCol = devicesX * 8 - 1;
-	frameBuffer = new byte[_numDevices * 8];
+	frameBuffer = new uint8_t[_numDevices * 8];
 	pinMode(_clkPin, OUTPUT);
     pinMode(_csPin, OUTPUT);
     pinMode(_dinPin, OUTPUT);
@@ -43,11 +43,22 @@ void LED_Matrix::begin(void) {
   display();
 }
 
-void LED_Matrix::setFont(byte font) {
+void LED_Matrix::setFont(uint8_t font) {
     _font = font;
 }
 
-void LED_Matrix::setIntensity(byte intensity) {
+void LED_Matrix::on(void) {
+  for (int address=0; address < _numDevices; address++) {
+    write2device(address, MAX7219_SHUTDOWN, 0x01);
+  }  
+}
+void LED_Matrix::off(void) {
+  for (int address=0; address < _numDevices; address++) {
+    write2device(address, MAX7219_SHUTDOWN, 0x00);
+  }  
+}
+
+void LED_Matrix::setIntensity(uint8_t intensity) {
   _intensity = intensity;  
   for (int address=0; address < _numDevices; address++) {
     write2device(address, MAX7219_INTENSITY, _intensity);
@@ -70,13 +81,13 @@ void LED_Matrix::clear(void) {
 }
 
 void LED_Matrix::clear(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1) {
-  for (int address=0; address < _numDevices; address++) {
+/*  for (int address=0; address < _numDevices; address++) {
 	displayTest(address, false);  
     write2device(address, MAX7219_SHUTDOWN, 0x01);
     write2device(address, MAX7219_DECODE_MODE, 0x00);
     write2device(address, MAX7219_SCAN_LIMIT, 0x07); 
     write2device(address, MAX7219_INTENSITY, _intensity);
-  }  
+  } */  
   for(unsigned int x=x0; x<=x1; x++) {
     for(unsigned int y=y0; y<=y1; y++) {
         setPixel(x,y,false);
@@ -86,7 +97,7 @@ void LED_Matrix::clear(unsigned int x0, unsigned int y0, unsigned int x1, unsign
 
 void LED_Matrix::display(void) {
   for (unsigned int address=0; address < _numDevices; address++) {
-    for (byte row=1; row < 9; row++) {
+    for (uint8_t row=1; row < 9; row++) {
 			write2device(address, row, frameBuffer[ (8*address) + row - 1 ]); 
 #ifdef ESP8266
             delay(0);
@@ -100,8 +111,8 @@ unsigned long LED_Matrix::getFBaddr(unsigned int col, unsigned int row) {
         unsigned int segmentX=(unsigned int)col/8;
         unsigned int segmentY=(unsigned int)row/8;
         unsigned int segment=(segmentY*_devicesX)+segmentX;
-        byte colInSegment=(segmentX*8)+7-col;
-        byte rowInSegment=row-(segmentY*8);
+        uint8_t colInSegment=(segmentX*8)+7-col;
+        uint8_t rowInSegment=row-(segmentY*8);
         // frameBuffer address is 8*Segment+rowInSegment
         return (((unsigned int)8*segment+rowInSegment)<<8) | colInSegment;
     } else {
@@ -116,10 +127,30 @@ void LED_Matrix::setCursor(unsigned int col, unsigned int row) {
     }
 }
 
+unsigned int LED_Matrix::getSize(char* text){
+  unsigned int retval=0;
+  uint8_t letter_size;
+  for( int i=0; i< strlen(text); i++) {
+    if (text[i] > 31 && text[i] < 127) {
+        letter_size = pgm_read_byte(&myFont7x6[text[i] - 32][FONT_SIZE-1]);
+        switch (_font) {
+            case 1:
+                retval += letter_size;
+                break;
+            case 2:
+                retval += 5;
+                break;
+        }
+    }
+  }
+  retval += strlen(text)-1;
+  return retval;
+}
+
 void LED_Matrix::setPixel(unsigned int col, unsigned int row, bool val) {
     unsigned long FB_addr_raw=getFBaddr(col, row);
     if (FB_addr_raw < 0xFFFFFFFF) {
-        byte colInSegment = (byte)(FB_addr_raw & 0xFF);
+        uint8_t colInSegment = (uint8_t)(FB_addr_raw & 0xFF);
         unsigned int FB_addr = (FB_addr_raw >> 8);
         if (val) {
         // set a pixel
@@ -134,24 +165,28 @@ void LED_Matrix::setPixel(unsigned int col, unsigned int row, bool val) {
 bool LED_Matrix::getPixel(unsigned int col, unsigned int row) {
     unsigned int FB_addr_raw=getFBaddr(col, row);
     if (FB_addr_raw < 0xFFFFFFFF) {
-        byte colInSegment = (byte)(FB_addr_raw & 0x000000FF);
+        uint8_t colInSegment = (uint8_t)(FB_addr_raw & 0x000000FF);
         unsigned int FB_addr = (unsigned int)(FB_addr_raw >> 8);
         return frameBuffer[FB_addr] & (0x01 << colInSegment);
+    } else {
+        return false;
     }
 }
 
 size_t LED_Matrix::write(const uint8_t *buffer, size_t size) {
-    for (int i=0; i<size; i++) {
-        write(buffer[i]);
-    }
+  for (int i=0; i<size; i++) {
+    write(buffer[i]);
+  }
+  return size;
 }
 
 size_t LED_Matrix::write(uint8_t c) {
-    size_t retval=0;
-	byte res;
-	byte mybit;
-    byte letter_size;
-    byte font_size;
+//printf_P("#0");        
+    size_t retval = 0;
+	uint8_t res = 255;
+	uint8_t mybit;
+    uint8_t letter_size;
+    uint8_t font_size;
 	// CF und LF sorgen für Zeilenumbruch
 //	if (c == 10 || c == 13) {
 	if (c == 10 ) {
@@ -169,14 +204,14 @@ size_t LED_Matrix::write(uint8_t c) {
         }
 		retval = 1;
 		if (aktCol <= maxCol && aktRow <= maxRow) {
-            if (letter_size < 4) {
+            if (_font == 2 && letter_size < 4) {
                 for ( int srow=0; srow < 8; srow++) {
                     setPixel(aktCol, aktRow + srow, false); 	
                 }                    
                 aktCol++;
                 font_size--;
             }                
-            if (letter_size < 3) {
+            if (_font == 2 && letter_size < 3) {
                 for ( int srow=0; srow < 8; srow++) {
                     setPixel(aktCol, aktRow + srow, false); 	
                 }                    
@@ -204,7 +239,7 @@ size_t LED_Matrix::write(uint8_t c) {
 #ifdef ESP8266
     delay(0);
 #endif    
-	return retval;
+	return 1;
 }
 
 void LED_Matrix::scrollDisplay(scrollDir dir) {
@@ -311,7 +346,7 @@ void LED_Matrix::displayTest(unsigned int deviceNumber, bool state) {
   }
 }
 
-void LED_Matrix::write2device(unsigned int deviceNumber, byte max_reg, byte max_data) {
+void LED_Matrix::write2device(unsigned int deviceNumber, uint8_t max_reg, uint8_t max_data) {
    digitalWrite(_csPin, LOW);
    for (unsigned int address=0; address < _numDevices; address++) {
      if ( address == deviceNumber) {

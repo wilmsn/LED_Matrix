@@ -72,7 +72,7 @@ class LED_Matrix : public Print {
 			scrollLeft,
 			scrollRight
 	};
-	
+
     /*
     The constructor, call:
     LED_MATRIX <Name of object>(<DIN Pin on Arduino>, <CLK Pin on Arduino>, <CS Pin on Arduino>, <Number of Devices in X Dir.>, <Number of Devices in Y Dir.>);
@@ -86,12 +86,22 @@ class LED_Matrix : public Print {
 	void begin(void);
 
     /*
+    on: switches all segments on
+    */	
+    void on(void);
+
+    /*
+    off: switches all segments off
+    */	
+    void off(void);
+
+    /*
      * setFont: Selects between available fonts.
      * Build in fonts are:
      * 1) 6*7 fonts variable x-size
      * 2) 6*7 fonts fixed x-size
      */
-    void setFont(byte font);
+    void setFont(uint8_t font);
     
     /*
 	display: displays the content of the framebuffer
@@ -102,25 +112,32 @@ class LED_Matrix : public Print {
 	getNumDevices: get the configured number of devices call in constructor
 	*/
     unsigned int getNumDevicesX(void);
-	
+
 	/*
 	getNumDevices: get the configured number of devices call in constructor
 	*/
     unsigned int getNumDevicesY(void);
-	/*
+
+    /*
 	setIntensity: sets the intensity of all segments
 	intensity can be 0 = minimal to 15 = maximum
     */	
-	void setIntensity(byte intensity);
+	void setIntensity(uint8_t intensity);
 
     /*
 	clear: Clear the framebuffer 
 	Dont forget to call display() to see the result!
 	*/
 	void clear(void);
+
     // clear just the rectangle between (x0,y0) and (x1,y1)
 	void clear(unsigned int x0, unsigned int y0, unsigned int x1, unsigned int y1);
 
+    /*
+    getSize: Gets the size of a text in pixel
+    */
+    unsigned int getSize(char* text);
+    
 	/*
 	setPixel: set or delete a single pixel.
 	val = true ==> set this pixel
@@ -157,7 +174,10 @@ class LED_Matrix : public Print {
     */				 
 	void displayTest(unsigned int deviceNumber, bool state);
     
-	void setCursor(unsigned int col, unsigned int row);
+    /*
+    setCursor: sets the Cursor to position x,y => Only used for print command!
+    */
+    void setCursor(unsigned int col, unsigned int row);
     
 
 
@@ -169,14 +189,14 @@ class LED_Matrix : public Print {
 	unsigned int _numDevices;
     unsigned int _devicesX;
     unsigned int _devicesY;
-    byte _intensity;
-    byte _font;
+    uint8_t _intensity;
+    uint8_t _font;
     unsigned int  maxCol;
     unsigned int  maxRow;
     unsigned int  aktCol;
     unsigned int  aktRow;
     
-	byte* frameBuffer;
+	uint8_t* frameBuffer;
 	/*
 	write2device: writes a combination of <register><data> to a specific device.
 	In a daisy chain it counts like this:
@@ -185,7 +205,7 @@ class LED_Matrix : public Print {
 	------------    ------------     ------------     -----------
     Only the selected device gets the data all other devices get NOP (no operation)
     */	
-    void write2device(unsigned int deviceNumber, byte max_reg, byte max_data);
+    void write2device(unsigned int deviceNumber, uint8_t max_reg, uint8_t max_data);
 
     unsigned long getFBaddr(unsigned int col, unsigned int row);
     
