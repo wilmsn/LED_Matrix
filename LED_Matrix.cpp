@@ -31,7 +31,7 @@ LED_Matrix::LED_Matrix(unsigned int dinPin, unsigned int clkPin, unsigned int cs
 }
 
 void LED_Matrix::begin(void) {
-  for (int address=0; address < _numDevices; address++) {
+  for (unsigned int address=0; address < _numDevices; address++) {
 	displayTest(address, false);  
     write2device(address, MAX7219_SHUTDOWN, 0x01);
     write2device(address, MAX7219_DECODE_MODE, 0x00);
@@ -48,19 +48,19 @@ void LED_Matrix::setFont(uint8_t font) {
 }
 
 void LED_Matrix::on(void) {
-  for (int address=0; address < _numDevices; address++) {
+  for (unsigned int address=0; address < _numDevices; address++) {
     write2device(address, MAX7219_SHUTDOWN, 0x01);
   }  
 }
 void LED_Matrix::off(void) {
-  for (int address=0; address < _numDevices; address++) {
+  for (unsigned int address=0; address < _numDevices; address++) {
     write2device(address, MAX7219_SHUTDOWN, 0x00);
   }  
 }
 
 void LED_Matrix::setIntensity(uint8_t intensity) {
   _intensity = intensity;  
-  for (int address=0; address < _numDevices; address++) {
+  for (unsigned int address=0; address < _numDevices; address++) {
     write2device(address, MAX7219_INTENSITY, _intensity);
   }	
 }
@@ -75,7 +75,7 @@ unsigned int LED_Matrix::getNumDevicesY(void) {
  
 void LED_Matrix::clear(void) {
 //  delete framebuffer
-    for (int fb_addr=0; fb_addr<(_numDevices*8); fb_addr++) {
+    for (unsigned int fb_addr=0; fb_addr<(_numDevices*8); fb_addr++) {
        frameBuffer[fb_addr]=0;
     }	
 }
@@ -130,7 +130,7 @@ void LED_Matrix::setCursor(unsigned int col, unsigned int row) {
 unsigned int LED_Matrix::getSize(char* text){
   unsigned int retval=0;
   uint8_t letter_size;
-  for( int i=0; i< strlen(text); i++) {
+  for( int i=0; i < (int)strlen(text); i++) {
     if (text[i] > 31 && text[i] < 127) {
         letter_size = pgm_read_byte(&myFont7x6[text[i] - 32][FONT_SIZE-1]);
         switch (_font) {
@@ -174,7 +174,7 @@ bool LED_Matrix::getPixel(unsigned int col, unsigned int row) {
 }
 
 size_t LED_Matrix::write(const uint8_t *buffer, size_t size) {
-  for (int i=0; i<size; i++) {
+  for (int i=0; i < (int)size; i++) {
     write(buffer[i]);
   }
   return size;
@@ -186,7 +186,7 @@ size_t LED_Matrix::write(uint8_t c) {
 	uint8_t res = 255;
 	uint8_t mybit;
     uint8_t letter_size;
-    uint8_t font_size;
+    uint8_t font_size = 5;
 	// CF und LF sorgen für Zeilenumbruch
 //	if (c == 10 || c == 13) {
 	if (c == 10 ) {
@@ -239,7 +239,7 @@ size_t LED_Matrix::write(uint8_t c) {
 #ifdef ESP8266
     delay(0);
 #endif    
-	return 1;
+	return retval;
 }
 
 void LED_Matrix::scrollDisplay(scrollDir dir) {
