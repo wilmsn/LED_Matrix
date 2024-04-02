@@ -1,0 +1,20 @@
+{
+  "name": "LED_Matrix",
+  "version": "0.9.1",
+  "description": "A library for MAX7219; Includes local framebuffer - refresh is software-controlled. Can use more than 8 segments. Font is included",
+  "keywords": "MAX7219",
+  "authors":
+  {
+    "name":  "Norbert Wilms",
+    "url":   "https://github.com/wilmsn",
+    "maintainer": true
+  },
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/wilmsn/LED_Matrix.git"
+  },
+  "homepage": "https://github.com/wilmsn/LED_Matrix.git",
+  "frameworks": "*",
+  "platforms": "Arduino"
+}
